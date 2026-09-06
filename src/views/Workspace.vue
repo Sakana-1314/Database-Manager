@@ -12,6 +12,7 @@ import { ApiError } from '../api/errors';
 import { useSettings } from '../stores/settings';
 import ConsoleTab from './ConsoleTab.vue';
 import DataTab from './DataTab.vue';
+import StructureTab from './StructureTab.vue';
 import ConnectionModal from '../components/ConnectionModal.vue';
 
 const router = useRouter();
@@ -24,13 +25,17 @@ interface DbGroup { name: string; expanded: boolean; loading: boolean; objects?:
 const groups = ref<DbGroup[]>([]);
 const dbsLoading = ref(false);
 
-type TabKind = 'data' | 'console';
+type TabKind = 'data' | 'console' | 'struct';
 interface Tab { key: string; connId: string; kind: TabKind; title: string; database?: string; table?: string; schema?: string }
 const tabs = ref<Tab[]>([]);
 const activeTab = ref<string | null>(null);
 let tabSeq = 0;
 
 const connFor = computed(() => conns.list.reduce<Record<string, ConnectionRecord>>((m, c) => ((m[c.id] = c), m), {}));
+const connectionEngineIsSql = computed(() => {
+  const c = current();
+  return !!c && c.engine !== 'mongodb';
+});
 
 function current(): ConnectionRecord | null {
   return conns.activeOrFirst;
@@ -87,6 +92,11 @@ function openTab(kind: TabKind, title: string, database?: string, table?: string
   const tab: Tab = { key, connId: conn.id, kind, title, database, table, schema };
   tabs.value.push(tab);
   activeTab.value = key;
+}
+
+function openStruct(database?: string, table?: string, schema?: string) {
+  if (!table) return;
+  openTab('struct', `${database ? database + '.' : ''}${table} 结构`, database, table, schema);
 }
 
 function connOf(tab: Tab): ConnectionRecord | null {
@@ -177,6 +187,7 @@ function logout() {
                   <span class="t-icon">{{ t.kind === 'view' ? '🔍' : t.rows === 0 ? '▫️' : '📋' }}</span>
                   <span class="t-name">{{ t.name }}</span>
                   <span v-if="t.rows !== undefined" class="rows">{{ t.rows > 9999 ? '>10k' : t.rows }}</span>
+                  <n-button v-if="connectionEngineIsSql" size="tiny" quaternary class="row-btn" @click.stop="openStruct(g.name, t.name)">🛠</n-button>
                 </div>
               </template>
               <div v-else class="hint">空</div>
@@ -222,8 +233,20 @@ function logout() {
             <template v-if="tab.kind === 'console'">
               <ConsoleTab v-if="connOf(tab)" :key="tab.key" :connection="connOf(tab)!" :database="tab.database" />
             </template>
+            <template v-else-if="tab.kind === 'struct'">
+              <StructureTab v-if="connOf(tab)" :key="tab.key" :connection="connOf(tab)!" :database="tab.database" :table="tab.table!" :schema="tab.schema" />
+              <n-empty v-else description="连接已被删除" style="margin-top: 40px" />
+            </template>
             <template v-else>
-              <DataTab v-if="connOf(tab)" :key="tab.key" :connection="connOf(tab)!" :database="tab.database" :table="tab.table!" :schema="tab.schema" />
+              <DataTab
+                v-if="connOf(tab)"
+                :key="tab.key"
+                :connection="connOf(tab)!"
+                :database="tab.database"
+                :table="tab.table!"
+                :schema="tab.schema"
+                @structure="openStruct(tab.database, tab.table, tab.schema)"
+              />
               <n-empty v-else description="连接已被删除" style="margin-top: 40px" />
             </template>
           </div>
