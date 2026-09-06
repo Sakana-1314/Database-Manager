@@ -49,8 +49,8 @@ export async function assemble() {
     }
   }
   await copy(join(ROOT, 'edge-functions'), join(deploy, 'edge-functions'));
-  await copy(join(ROOT, 'node-functions'), join(deploy, 'node-functions'));
-  await copy(join(ROOT, 'middleware.js'), join(deploy, 'middleware.js'));
+  // node-functions：只带编译后的路由文件，避免把 TS 源码/构建脚本扫成幽灵路由
+  await copy(join(ROOT, 'node-functions', 'api'), join(deploy, 'node-functions', 'api'));
   console.log('[assemble] → deploy/');
 }
 

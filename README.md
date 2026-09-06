@@ -10,7 +10,7 @@
 npm install
 
 # 2. 构建产物
-npm run build       # → frontend/dist + node-functions + edge-functions + middleware.js → deploy/
+npm run build       # → dist + node-functions + edge-functions → deploy/
 
 # 3. 部署到 EdgeOne Pages
 # a) 把 deploy/ 目录上传到 EdgeOne Pages（输出目录指向 deploy/）
@@ -88,10 +88,9 @@ uvicorn app.main:app --host 0.0.0.0 --port 9000
 
 | 目录/文件 | 说明 |
 |---|---|
-| `deploy/` | 可直接上传的站点根（静态 + 函数 + 中间件） |
+| `deploy/` | 可直接上传的站点根（静态 + 函数） |
 | `edge-functions/` | V8 薄函数（auth/meta/tunnel/SPA回落） |
 | `node-functions/` | Node 厚函数（db执行器，含驱动+ssh2） |
-| `middleware.js` | 根中间件（JWT校验） |
 
 ## 环境变量
 

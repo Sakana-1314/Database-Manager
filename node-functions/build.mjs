@@ -66,17 +66,16 @@ export async function buildAll({ minify = false } = {}) {
   mk(join(edgeDir, 'api'));
   mk(join(nodeDir, 'api'));
 
-  // 边缘函数（V8 薄）
+  // 边缘函数（V8 薄）——鉴权由各端点自行 requireAuth，无需根中间件
   await bundle({ entry: entries('auth.entry.ts'), outfile: join(edgeDir, 'api', 'auth.js'), platform: 'browser', target: targetEdge, minify });
   await bundle({ entry: entries('meta.entry.ts'), outfile: join(edgeDir, 'api', 'meta.js'), platform: 'browser', target: targetEdge, minify });
   await bundle({ entry: entries('tunnel.entry.ts'), outfile: join(edgeDir, 'api', 'tunnel.js'), platform: 'browser', target: targetEdge, minify });
   await bundle({ entry: entries('spa.entry.ts'), outfile: join(edgeDir, '[[path]].js'), platform: 'browser', target: targetEdge, minify });
-  await bundle({ entry: entries('middleware.entry.ts'), outfile: join(ROOT, 'middleware.js'), platform: 'browser', target: targetEdge, minify });
 
   // Node 厚执行器
   await bundle({ entry: entries('db.entry.ts'), outfile: join(nodeDir, 'api', 'db.js'), platform: 'node', target: 'node18', minify });
 
-  console.log('[build] 完成 → edge-functions/, node-functions/, middleware.js');
+  console.log('[build] 完成 → edge-functions/, node-functions/');
 }
 
 if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1].replaceAll('\\', '/')}`).href) {
