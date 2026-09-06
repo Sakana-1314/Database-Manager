@@ -9,3 +9,14 @@ deploy/
 *.log
 .edgeone/
 .edgeone-state/
+node_modules/
+dist/
+deploy/
+*.local
+.env
+.env.*
+!.env.example
+.DS_Store
+*.log
+.edgeone/
+.edgeone-state/

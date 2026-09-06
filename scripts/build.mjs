@@ -15,16 +15,16 @@ function run(cmd, args, cwd = ROOT) {
 }
 
 async function buildBackend(minify = true) {
-  const mod = await import(new URL(`file:///${ROOT.replaceAll('\\', '/')}/backend/build.mjs`).href);
+  const mod = await import(new URL(`file:///${ROOT.replaceAll('\\', '/')}/node-functions/build.mjs`).href);
   await mod.buildAll({ minify });
 }
 
 async function buildFrontend() {
-  if (!existsSync(join(ROOT, 'frontend', 'package.json'))) {
-    console.warn('[build] frontend 未初始化，跳过');
+  if (!existsSync(join(ROOT, 'package.json'))) {
+    console.warn('[build] 前端源码不存在，跳过');
     return;
   }
-  run('npm', ['run', 'build', '-w', 'frontend'], ROOT);
+  run('npm', ['run', 'build:frontend'], ROOT);
 }
 
 export async function assemble() {
@@ -41,7 +41,7 @@ export async function assemble() {
   };
 
   // 静态资源（dist 内容平铺到 deploy 根）
-  const dist = join(ROOT, 'frontend', 'dist');
+  const dist = join(ROOT, 'dist');
   if (existsSync(dist)) {
     for (const name of ['index.html', 'assets', 'favicon.svg', 'vite.svg']) {
       const p = join(dist, name);

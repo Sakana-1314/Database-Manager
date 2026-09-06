@@ -22,8 +22,8 @@ async function main() {
   await buildBackend(false);
 
   const envFlag = existsSync(join(ROOT, '.env')) ? ['--env-file=.env'] : [];
-  start('node', [...envFlag, 'backend/dev-server.mjs'], 'backend dev-server (:8788)');
-  start('npm', ['run', 'dev', '-w', 'frontend'], 'frontend vite dev');
+  start('node', [...envFlag, 'node-functions/dev-server.mjs'], 'backend dev-server (:8788)');
+  start('npm', ['run', 'dev'], 'frontend vite dev');
 }
 
 for (const sig of ['SIGINT', 'SIGTERM']) {
