@@ -16,5 +16,5 @@
       "@shared/*": ["../shared/src/*"]
     }
   },
-  "include": ["src"]
+  "include": ["auth/**/*.ts", "core/**/*.ts", "entries/**/*.ts", "node/**/*.ts", "errors.ts"]
 }

@@ -84,13 +84,26 @@ pip install -r requirements.txt
 uvicorn app.main:app --host 0.0.0.0 --port 9000
 ```
 
-## 构建产物
+## 目录结构与云端构建
+
+本仓库面向 **EdgeOne Pages（新版 Makers）的云端构建**：`git push` 后平台自行拉代码、装依赖、跑 `edgeone.json` 里配置的 `buildCommand`。
 
 | 目录/文件 | 说明 |
 |---|---|
-| `deploy/` | 可直接上传的站点根（静态 + 函数） |
-| `edge-functions/` | V8 薄函数（auth/meta/tunnel/SPA回落） |
-| `node-functions/` | Node 厚函数（db执行器，含驱动+ssh2） |
+| `src/` | 前端 Vue3 源码 |
+| `functions-src/` | 后端 TS 源码（executor/驱动/SSH/元数据）+ 打包脚本 |
+| `node-functions/` | **提交进仓库的函数产物**：`api/db.js` → `/api/db`（Node 执行器） |
+| `edge-functions/` | 提交进仓库的函数产物：`api/{auth,meta,tunnel}.js` → 对应 `/api/*`（Edge 薄函数） |
+| `dist/` + `deploy/` | 前端构建产物（本地 `npm run build` 生成，不入库） |
+| `shared/` | 前后端共享的协议类型/常量 |
+| `docs/tunnel/` | php / FastAPI 隧道脚本 |
+| `edgeone.json` | 云端构建配置（outputDirectory=deploy + 构建命令 + SPA 回落） |
+
+要点：
+- `node-functions/`、`edge-functions/` 里**只有可被平台消费的单文件函数**（无第三方裸依赖），平台会把它再打包一次；这也是它们要**提交进仓库**的原因。
+- TS 源码与打包配置在 `functions-src/`，本地 `npm run build` 负责重新生成产物并做类型/构建校验；产物 banner 稳定（无时间戳），重复构建不产生 diff。
+- 前端 SPA history 深层链接由 `edgeone.json` 的 `rewrites: [{source:"/*",destination:"/index.html"}]` 兜底，不再需要 catch-all 函数。
+- 隧道脚本在 `docs/tunnel/`，属可选项，不入部署产物。
 
 ## 环境变量
 

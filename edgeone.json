@@ -1,0 +1,13 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "deploy",
+  "nodeVersion": "22.11.0",
+  "cloudFunctions": {
+    "nodejs": {
+      "externalNodeModules": ["ssh2", "cpu-features"]
+    }
+  },
+  "rewrites": [
+    { "source": "/*", "destination": "/index.html" }
+  ]
+}

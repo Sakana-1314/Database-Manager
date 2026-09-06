@@ -1,4 +1,4 @@
-// 本地开发：backend 产物 + 后端 dev-server + 前端 Vite dev（代理 /api → dev-server）
+// 本地开发：打包函数 → dev-server(:8788) 模拟各端点 + 前端 Vite dev(:5173)
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve, join } from 'node:path';
@@ -17,29 +17,22 @@ function start(cmd, args, label) {
 }
 
 async function main() {
-  console.log('[dev] 构建后端函数产物…');
-  const { buildBackend } = await import(new URL(`file:///${ROOT.replaceAll('\\', '/')}/scripts/build.mjs`).href);
-  await buildBackend(false);
+  console.log('[dev] 打包函数产物…');
+  const { buildFunctions } = await import(new URL(`file:///${ROOT.replaceAll('\\', '/')}/functions-src/build.mjs`).href);
+  await buildFunctions({ minify: false });
 
   const envFlag = existsSync(join(ROOT, '.env')) ? ['--env-file=.env'] : [];
-  start('node', [...envFlag, 'node-functions/dev-server.mjs'], 'backend dev-server (:8788)');
+  start('node', [...envFlag, 'scripts/dev-server.mjs'], 'backend dev-server (:8788)');
   start('npm', ['run', 'dev'], 'frontend vite dev');
 }
 
 for (const sig of ['SIGINT', 'SIGTERM']) {
   process.on(sig, () => {
     for (const c of children) {
-      try {
-        c.kill(sig);
-      } catch {
-        /* ignore */
-      }
+      try { c.kill(sig); } catch { /* ignore */ }
     }
     process.exit(0);
   });
 }
 
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+main().catch((e) => { console.error(e); process.exit(1); });

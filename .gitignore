@@ -9,9 +9,3 @@ deploy/
 !.env.example
 .DS_Store
 *.log
-
-# 构建产物（函数编译输出）—— 源在 node-functions/src，由 npm run build 生成
-node-functions/api/
-edge-functions/api/
-edge-functions/\[\[path\]\].js
-node-functions/src/generated-index-html.ts

@@ -7,11 +7,11 @@
     "dev": "node scripts/dev.mjs",
     "build": "node scripts/build.mjs",
     "build:frontend": "vue-tsc --noEmit -p tsconfig.json && vite build",
-    "build:backend": "node node-functions/build.mjs",
+    "build:backend": "node functions-src/build.mjs",
     "assemble": "node scripts/build.mjs --assemble",
-    "deploy": "npm run build && npm run assemble",
+    "deploy": "npm run build",
     "typecheck": "vue-tsc --noEmit -p tsconfig.json",
-    "typecheck:backend": "cd node-functions && tsc --noEmit -p tsconfig.json"
+    "typecheck:backend": "cd functions-src && tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
     "bson": "^6.10.1",
