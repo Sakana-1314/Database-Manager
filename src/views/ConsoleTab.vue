@@ -4,7 +4,7 @@ import { useMessage } from 'naive-ui';
 import type { ConnectionRecord } from '../lib/idb';
 import type { OpResult, ResultSet } from '@shared/index';
 import { execSql, loadDatabases } from '../lib/dbops';
-import { idbPushHistory } from '../lib/idb';
+import { idbPushHistory, idbHistory } from '../lib/idb';
 import { zhMessage } from '../api/errors';
 import { ApiError } from '../api/errors';
 import { tsLabel } from '../lib/cell';
@@ -19,6 +19,32 @@ const sql = ref('-- 在此输入 SQL；Ctrl/Cmd + Enter 运行（整段）\nSELE
 const dbs = ref<string[]>([]);
 const dbSel = ref<string>('');
 const running = ref(false);
+const historyOpts = ref<{ label: string; key: string; sql: string }[]>([]);
+
+async function refreshHistory() {
+  try {
+    const items = await idbHistory();
+    historyOpts.value = items
+      .slice()
+      .reverse()
+      .slice(0, 20)
+      .map((it) => ({
+        key: String(it.id),
+        label: `${it.ok ? '✓' : '✗'} ${it.sql.replaceAll('\n', ' ').slice(0, 60)}`,
+        sql: it.sql,
+      }));
+  } catch {
+    historyOpts.value = [];
+  }
+}
+
+function pickHistory(key: string) {
+  const hit = historyOpts.value.find((o) => o.key === key);
+  if (hit) {
+    sql.value = hit.sql;
+    message.info('已载入历史 SQL，可继续编辑或运行');
+  }
+}
 
 type Out = { kind: 'set'; resultset: ResultSet; label: string } | { kind: 'msg'; text: string; label: string };
 const outputs = ref<Out[]>([]);
@@ -88,6 +114,17 @@ function collect(res: OpResult, durMs: number) {
       <n-button size="small" secondary @click="run(true)">运行选中</n-button>
       <n-button size="small" type="primary" :loading="running" @click="run(false)">运行 (Ctrl+Enter)</n-button>
       <n-button size="small" quaternary @click="outputs = []">清空结果</n-button>
+      <n-popover trigger="click" placement="bottom-end" :width="380" @update:show="(v: boolean) => v && refreshHistory()">
+        <template #trigger>
+          <n-button size="small" quaternary>历史</n-button>
+        </template>
+        <div class="hist">
+          <div v-if="!historyOpts.length" class="hist-empty">暂无历史（运行过的 SQL 记录在本浏览器）</div>
+          <div v-for="o in historyOpts" :key="o.key" class="hist-item" @click="pickHistory(o.key)">
+            <span>{{ o.label }}</span>
+          </div>
+        </div>
+      </n-popover>
     </div>
 
     <div class="editor-box">
@@ -127,4 +164,8 @@ function collect(res: OpResult, durMs: number) {
 .out { margin: 8px 0 16px; }
 .out-label { font-size: 12px; opacity: .6; padding: 2px 8px; }
 .msg.ok { padding: 6px 12px; font-size: 13px; }
+.hist { max-height: 260px; overflow: auto; }
+.hist-empty { font-size: 12px; opacity: .6; padding: 8px; }
+.hist-item { padding: 6px 8px; font-size: 12px; cursor: pointer; border-radius: 4px; font-family: ui-monospace, Consolas, monospace; }
+.hist-item:hover { background: rgba(128,128,128,0.12); }
 </style>

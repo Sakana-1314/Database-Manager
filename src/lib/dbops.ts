@@ -1,5 +1,5 @@
 import { apiExec } from '../api/client';
-import type { ConnectionSpec, OpId, OpResult, ResultSet, Column } from '@shared/index';
+import type { ConnectionSpec, OpId, OpResult, ResultSet, Column, Row, CellValue, PkSpec } from '@shared/index';
 import type { ConnectionRecord } from './idb';
 
 export interface TableMeta { name: string; kind: 'table' | 'view' | 'routine'; rows?: number; comment?: string; engine?: string; sizeBytes?: number }
@@ -69,4 +69,63 @@ export async function testConnection(conn: ConnectionRecord): Promise<{ reachabl
   const res = await apiExec('meta.testConnection', {}, conn as ConnectionSpec);
   const d = res.kind === 'raw' ? (res.data as { reachable: boolean; engine?: string; version?: string }) : null;
   return d ?? { reachable: false };
+}
+
+// ---------- DML / DDL ----------
+
+export async function loadPk(conn: ConnectionRecord, database: string | undefined, table: string, schema?: string): Promise<string[]> {
+  const d = (await rawData('meta.getPrimaryKey', { database, schema, table }, conn)) as { pk: string[] } | null;
+  return d?.pk ?? [];
+}
+
+export interface IndexMeta { name: string; columns: string[]; unique: boolean; primary: boolean }
+export interface FkMeta { name: string; columns: string[]; refTable: string; refColumns: string[]; onUpdate?: string; onDelete?: string }
+
+export async function loadStructure(
+  conn: ConnectionRecord,
+  database: string | undefined,
+  table: string,
+  schema?: string,
+): Promise<{ columns: ColMeta[]; pk: string[]; indexes: IndexMeta[]; fks: FkMeta[]; createSql: { sql: string; approximate?: boolean } }> {
+  const cols = await loadColumns(conn, database, table, schema);
+  const pkD = (await rawData('meta.getPrimaryKey', { database, schema, table }, conn)) as { pk: string[] } | null;
+  const ixD = (await rawData('meta.getIndexes', { database, schema, table }, conn)) as { indexes: IndexMeta[] } | null;
+  const fkD = (await rawData('meta.getForeignKeys', { database, schema, table }, conn)) as { foreignKeys: FkMeta[] } | null;
+  const csD = (await rawData('meta.getCreateTable', { database, schema, table }, conn)) as { sql: string; approximate?: boolean } | null;
+  return { columns: cols, pk: pkD?.pk ?? [], indexes: ixD?.indexes ?? [], fks: fkD?.foreignKeys ?? [], createSql: csD ?? { sql: '' } };
+}
+
+export async function dmlInsert(conn: ConnectionRecord, database: string | undefined, table: string, rows: Row[], schema?: string): Promise<{ affected: number; message?: string }> {
+  const res = await apiExec('dml.insert', { database, schema, table, rows: rows as never }, conn as ConnectionSpec);
+  return { affected: res.kind === 'ok' ? (res.affectedRows ?? rows.length) : 0, message: res.kind === 'ok' ? res.message : undefined };
+}
+
+export async function dmlUpdate(conn: ConnectionRecord, database: string | undefined, table: string, pks: PkSpec[], values: Row, schema?: string): Promise<number> {
+  const res = await apiExec('dml.update', { database, schema, table, pks, values: values as never }, conn as ConnectionSpec);
+  return res.kind === 'ok' ? (res.affectedRows ?? 0) : 0;
+}
+
+export async function dmlDeleteRows(conn: ConnectionRecord, database: string | undefined, table: string, pks: PkSpec[][], schema?: string): Promise<number> {
+  const res = await apiExec('dml.deleteRows', { database, schema, table, pks }, conn as ConnectionSpec);
+  return res.kind === 'ok' ? (res.affectedRows ?? 0) : 0;
+}
+
+export async function runDdl(conn: ConnectionRecord, sql: string, database?: string): Promise<OpResult> {
+  return apiExec('ddl.execute', { sql, database }, conn as ConnectionSpec);
+}
+
+/** 建一个可编辑的单行表单初值 */
+export function emptyRow(cols: ColMeta[]): Row {
+  const row: Row = {};
+  for (const c of cols) row[c.name] = null;
+  return row;
+}
+
+/** 把任意 UI 输入串归一成引擎无关 CellValue */
+export function toCell(value: string | null, colType: Column['type']): CellValue {
+  if (value === null) return null;
+  const t = value.trim();
+  if (t === '') return null;
+  if ((colType === 'int' || colType === 'number' || colType === 'decimal') && !Number.isNaN(Number(t))) return Number(t);
+  return t;
 }
