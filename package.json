@@ -8,7 +8,6 @@
     "build": "node scripts/build.mjs",
     "build:frontend": "vue-tsc --noEmit -p tsconfig.json && vite build",
     "build:backend": "node functions-src/build.mjs",
-    "assemble": "node scripts/build.mjs --assemble",
     "deploy": "npm run build",
     "typecheck": "vue-tsc --noEmit -p tsconfig.json",
     "typecheck:backend": "cd functions-src && tsc --noEmit -p tsconfig.json"

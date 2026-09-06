@@ -3,6 +3,7 @@ dist/
 deploy/
 .edgeone/
 .edgeone-state/
+.tef_dist/
 *.local
 .env
 .env.*

@@ -1,7 +1,7 @@
 # EdgeOne DB Admin
 
 基于 EdgeOne Pages 的**自托管多数据库 Web 管理**（MySQL / PostgreSQL / MongoDB），支持 SSH 跳板 + php/FastAPI 隧道中继。  
-**成本原则**：登录/JWT校验/元数据/隧道中继走便宜的 `edge-functions`（V8）；只有 direct/SSH 直连执行才经 `node-functions`（Node）。
+**部署**：git 推送 → EdgeOne Makers 云端构建（`edgeone.json` 配置），全部后端走 Node 函数（`node-functions/api/*.js`）。
 
 ## 快速开始
 
@@ -9,11 +9,12 @@
 # 1. 安装依赖
 npm install
 
-# 2. 构建产物
-npm run build       # → dist + node-functions + edge-functions → deploy/
+# 2. 构建（本地校验：dist 静态 + 函数产物）
+npm run build         # → dist/（前端）+ node-functions/api/*.js（函数）
 
-# 3. 部署到 EdgeOne Pages
-# a) 把 deploy/ 目录上传到 EdgeOne Pages（输出目录指向 deploy/）
+# 3. 部署到 EdgeOne Pages（新版 Makers）
+# a) 推送到 GitHub，云端自动跑 buildCommand=npm run build，静态取 outputDirectory=dist
+#    函数目录 node-functions/api 由平台识别
 # b) 在控制台设置环境变量：
 #    ADMIN_PASSWORD    — 登录密码（必填）
 #    JWT_SECRET        — JWT 签名密钥（可选，缺省用 ADMIN_PASSWORD 派生）
@@ -92,15 +93,14 @@ uvicorn app.main:app --host 0.0.0.0 --port 9000
 |---|---|
 | `src/` | 前端 Vue3 源码 |
 | `functions-src/` | 后端 TS 源码（executor/驱动/SSH/元数据）+ 打包脚本 |
-| `node-functions/` | **提交进仓库的函数产物**：`api/db.js` → `/api/db`（Node 执行器） |
-| `edge-functions/` | 提交进仓库的函数产物：`api/{auth,meta,tunnel}.js` → 对应 `/api/*`（Edge 薄函数） |
-| `dist/` + `deploy/` | 前端构建产物（本地 `npm run build` 生成，不入库） |
+| `node-functions/api/` | **提交进仓库的函数产物**：`db.js` → `/api/db`、`auth.js` → `/api/auth`、`meta.js` → `/api/meta`、`tunnel.js` → `/api/tunnel`（均为 Node 函数） |
+| `dist/` | 前端构建产物，EdgeOne `outputDirectory`（本地 `npm run build` 生成，不入库） |
 | `shared/` | 前后端共享的协议类型/常量 |
 | `docs/tunnel/` | php / FastAPI 隧道脚本 |
-| `edgeone.json` | 云端构建配置（outputDirectory=deploy + 构建命令 + SPA 回落） |
+| `edgeone.json` | 云端构建配置（outputDirectory=dist + 构建命令 + externalNodeModules + SPA 回落） |
 
 要点：
-- `node-functions/`、`edge-functions/` 里**只有可被平台消费的单文件函数**（无第三方裸依赖），平台会把它再打包一次；这也是它们要**提交进仓库**的原因。
+- `node-functions/api/*.js` 里**只有可被平台消费的单文件 Node 函数**（无第三方裸依赖），平台会把它再打包一次；这也是它们要**提交进仓库**的原因。勿用 `edge-functions/`（Makers 不识别其预编译产物）。
 - TS 源码与打包配置在 `functions-src/`，本地 `npm run build` 负责重新生成产物并做类型/构建校验；产物 banner 稳定（无时间戳），重复构建不产生 diff。
 - 前端 SPA history 深层链接由 `edgeone.json` 的 `rewrites: [{source:"/*",destination:"/index.html"}]` 兜底，不再需要 catch-all 函数。
 - 隧道脚本在 `docs/tunnel/`，属可选项，不入部署产物。
