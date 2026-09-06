@@ -1,0 +1,22 @@
+{
+  "name": "edgeone-db-admin",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Private self-hosted multi-DB admin on EdgeOne Pages (edge-functions first, node-functions for direct/SSH DB execution)",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "assemble": "node scripts/build.mjs --assemble",
+    "dev": "node scripts/dev.mjs",
+    "deploy": "node scripts/build.mjs --assemble && edgeone pages deploy ./deploy",
+    "typecheck": "npm run typecheck -w backend && npm run typecheck -w frontend"
+  },
+  "devDependencies": {}
+}

@@ -1,0 +1,7 @@
+{
+  "name": "@edgeone-db/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Runtime-agnostic protocol types shared by frontend, backend and the tunnel implementations"
+}
