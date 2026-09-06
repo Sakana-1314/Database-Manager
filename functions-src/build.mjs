@@ -41,19 +41,24 @@ async function bundle({ entryFile, outfile, platform, target, minify = true }) {
 export async function buildFunctions({ minify = true } = {}) {
   const mk = (d) => mkdirSync(d, { recursive: true });
   mk(join(ROOT, 'node-functions', 'api'));
-  mk(join(ROOT, 'edge-functions', 'api'));
 
-  await bundle({
-    entryFile: entry('db.entry.ts'),
-    outfile: join(ROOT, 'node-functions', 'api', 'db.js'),
-    platform: 'node',
-    target: 'node18',
-    minify,
-  });
-  await bundle({ entryFile: entry('auth.entry.ts'), outfile: join(ROOT, 'edge-functions', 'api', 'auth.js'), platform: 'browser', target: 'es2022', minify });
-  await bundle({ entryFile: entry('meta.entry.ts'), outfile: join(ROOT, 'edge-functions', 'api', 'meta.js'), platform: 'browser', target: 'es2022', minify });
-  await bundle({ entryFile: entry('tunnel.entry.ts'), outfile: join(ROOT, 'edge-functions', 'api', 'tunnel.js'), platform: 'browser', target: 'es2022', minify });
-  console.log('[build] 函数产物 → node-functions/api/db.js, edge-functions/api/{auth,meta,tunnel}.js');
+  // 全部作为 Node 函数输出到 node-functions/api/（Makers 已验证此目录/runtime 可用）
+  const targets = [
+    ['db.entry.ts', 'db.js'],
+    ['auth.entry.ts', 'auth.js'],
+    ['meta.entry.ts', 'meta.js'],
+    ['tunnel.entry.ts', 'tunnel.js'],
+  ];
+  for (const [name, out] of targets) {
+    await bundle({
+      entryFile: entry(name),
+      outfile: join(ROOT, 'node-functions', 'api', out),
+      platform: 'node',
+      target: 'node18',
+      minify,
+    });
+  }
+  console.log('[build] 函数产物 → node-functions/api/{db,auth,meta,tunnel}.js');
 }
 
 if (process.argv[1] && import.meta.url === new URL(`file:///${process.argv[1].replaceAll('\\', '/')}`).href) {

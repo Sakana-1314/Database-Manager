@@ -11,9 +11,9 @@ const ROOT = resolve(__dirname, '..');
 const PORT = Number(process.env.PORT || 8788);
 
 const ROUTES = {
-  '/api/auth': join(ROOT, 'edge-functions/api/auth.js'),
-  '/api/meta': join(ROOT, 'edge-functions/api/meta.js'),
-  '/api/tunnel': join(ROOT, 'edge-functions/api/tunnel.js'),
+  '/api/auth': join(ROOT, 'node-functions/api/auth.js'),
+  '/api/meta': join(ROOT, 'node-functions/api/meta.js'),
+  '/api/tunnel': join(ROOT, 'node-functions/api/tunnel.js'),
   '/api/db': join(ROOT, 'node-functions/api/db.js'),
 };
 
